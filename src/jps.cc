@@ -172,8 +172,8 @@ int AStarPlanner::GetNeighbors(const Map& map,
 
 
 float Heuristic(const Node& v, const Node& goal) {
-  const float dx = fabs(v.x() - goal.x());
-  const float dy = fabs(v.y() - goal.y());
+  const float dx = abs(v.x() - goal.x());
+  const float dy = abs(v.y() - goal.y());
   static const float k = sqrt(2.0) - 2.0;
   return (dx + dy + k * fmin(dx, dy));
 }

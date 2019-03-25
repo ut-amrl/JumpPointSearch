@@ -185,8 +185,6 @@ bool AStarPlanner::AxisAlignedJump(const Map& map,
       "ERROR: INVALID AXIS TYPE PASSED TO AStarPlanner::AxisAlignedJump");
   static_assert(kDir == -1 || kDir == 1,
       "ERROR: INVALID DIRECTION PASSED TO AStarPlanner::AxisAlignedJump");
-  // The number of neighbors to check if the jump is valid.
-  constexpr int kNumChecks = 4;
   // Lookup table of neighbors to check, and their potential resulting forced
   // neighbors.
   constexpr int kChecksLookup[2][2][2][2] = {

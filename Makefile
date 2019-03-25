@@ -1,23 +1,29 @@
-CXX = g++
-FLAGS = -std=c++11 -march=native -g -I/opt/X11/include -I/usr/include/eigen3 -I/usr/local/include/eigen3 -L/opt/X11/lib -I..
-OPTIMIZE = -O3
+# Clang is a good compiler to use during development due to its faster compile
+# times and more readable output.
+C_compiler=/usr/bin/clang
+CXX_compiler=/usr/bin/clang++
 
-.DEFAULT = all
+# GCC is better for release mode due to the speed of its output, and its support
+# for OpenMP.
+#C_compiler=/usr/bin/gcc
+#CXX_compiler=/usr/bin/g++
 
-all: bin/jps
+# acceptable build_types: Release/Debug/Profile
+build_type=Release
+# build_type=Debug
 
-test: bin/test_jps
-	./bin/test_jps
-
-bin/jps: jps_main.cpp jps.cpp obstaclemap.cpp imagemap.cpp jps.h \
-		simple_queue.h redundant_queue.h Makefile
-	$(CXX) $(FLAGS) $(OPTIMIZE) jps_main.cpp obstaclemap.cpp \
-		imagemap.cpp jps.cpp \
-		../util/timer.cc ../util/random.cc \
-		-lX11 -lpthread -o bin/jps -DNDEBUG
-
-bin/test_jps: jps_tests.cpp jps.cpp jps.h simple_queue.h Makefile
-	$(CXX) $(FLAGS) -O0 jps_tests.cpp jps.cpp -lX11 -lpthread -lgtest -lglog -o bin/test_jps
+all: build/CMakeLists.txt.copy
+	$(info Build_type is [${build_type}])
+	$(MAKE) --no-print-directory -C build
 
 clean:
-	rm -rf bin/*
+	rm -rf bin lib build
+
+build/CMakeLists.txt.copy: build CMakeLists.txt Makefile
+	cd build && cmake -DCMAKE_BUILD_TYPE=$(build_type) \
+		-DCMAKE_CXX_COMPILER=$(CXX_compiler) \
+		-DCMAKE_C_COMPILER=$(C_compiler) ..
+	cp CMakeLists.txt build/CMakeLists.txt.copy
+
+build:
+	mkdir -p build
