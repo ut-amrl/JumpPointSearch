@@ -22,6 +22,8 @@
 #include <stdlib.h>
 #include <vector>
 
+#include "gflags/gflags.h"
+
 #include "jps.h"
 #include "util/random.h"
 #include "util/timer.h"
@@ -38,6 +40,8 @@ void Plan(const Map& map, const Node& start, const Node& goal) {
 }
 
 int main(int num_args, char* args[]) {
+  // google::InitGoogleLogging(args[0]);
+  google::ParseCommandLineFlags(&num_args, &args, true);
   if (num_args < 2) {
     printf("Usage: ./bin/jps map.png [goal_x goal y [start x start y]]\n");
     return 1;

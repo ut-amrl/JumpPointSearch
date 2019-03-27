@@ -22,7 +22,7 @@ ADD_SUBDIRECTORY(src/shared)
 SET(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 SET(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 
-SET(libs glog X11 pthread amrl-shared-lib)
+SET(libs glog X11 pthread gflags amrl-shared-lib)
 
 
 ADD_EXECUTABLE(jps

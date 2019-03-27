@@ -46,7 +46,7 @@ class SimpleQueue {
       }
     }
     // Find where this value should go, and insert it there.
-    for (int i = 0; i < values_.size(); ++i) {
+    for (size_t i = 0; i < values_.size(); ++i) {
       if (values_[i].second > p) {
         values_.insert(values_.begin() + i, make_pair(v, p));
         return;

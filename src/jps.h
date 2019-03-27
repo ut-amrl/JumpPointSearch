@@ -114,6 +114,10 @@ class AStarPlanner {
                  const Node& goal,
                  Node neighbors[kMaxNeighbors]);
 
+  void GetPath(const NodeMap& parent_map, 
+               const Node& goal, 
+               Path* path_ptr);
+  
   void Visualize(const Map& map,
                  const Node& start,
                  const Node& goal,
@@ -141,6 +145,10 @@ class AStarPlanner {
             const Node& goal,
             Path* path);
 
+  void DrawPath(const Path& path);
+  
+  void InitVisualization(const Map& map);
+  
   // Stride length of the map, used for hashing.
   const int kStride;
   // Minimum number of entries to allocate memory for, in unordered maps.
@@ -153,6 +161,12 @@ class AStarPlanner {
   std::unordered_map<Node, float, NodeHash> g_values_;
   // Closed set (nodes with optimal costs).
   std::unordered_set<Node, NodeHash> closed_set_;
+  // Visualization display.
+  cimg_library::CImgDisplay* display_ = nullptr;
+  // Accumulated visualization image.
+  cimg_library::CImg<uint8_t> acc_viz_image_;
+  // Current visualization image.
+  cimg_library::CImg<uint8_t> viz_image_;
 };
 
 // Returns true if the position (n.x() + dir[0], n.y() + dir[1]) is unoccupied.

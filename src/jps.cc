@@ -24,6 +24,7 @@
 #include <unordered_set>
 #include <vector>
 
+#include "gflags/gflags.h"
 #include "eigen3/Eigen/Dense"
 #include "jps.h"
 #include "simple_queue.h"
@@ -35,14 +36,16 @@ using std::unordered_map;
 using std::unordered_set;
 using std::vector;
 
+DEFINE_bool(nojps, false, "Disable JPS");
+DEFINE_bool(nogui, false, "Disable Visualization");
+
 namespace {
+static const uint8_t kBlue[] = {0, 0, 255};
 static const uint8_t kRed[] = {255, 0, 0};
 static const uint8_t kGreen[] = {0, 255, 0};
-static const uint8_t kDarkBlue[] = {0, 0, 220};
+static const uint8_t kYellow[] = {255, 255, 0};
 static const uint8_t kGrey[] = {128, 128, 128};
 
-cimg_library::CImgDisplay* display_ = nullptr;
-cimg_library::CImg<uint8_t> viz_image_;
 }  // namespace
 
 namespace astarplanner {
@@ -63,7 +66,7 @@ int AStarPlanner::GetJPSNeighbors(const Map& map,
     ++num_neighbors;
   };
   auto VisualizeJump = [&](const Node& n) {
-    viz_image_.draw_line(v.x(), v.y(), n.x(), n.y(), kGrey);
+    acc_viz_image_.draw_line(v.x(), v.y(), n.x(), n.y(), kGrey);
   };
   {
     // +x jump search.
@@ -71,7 +74,7 @@ int AStarPlanner::GetJPSNeighbors(const Map& map,
     if (AxisAlignedJump<0, 1>(map, goal, x_fwd_steps, &n)) {
       AddNeighbor(n);
     }
-    if (kVisualizeJumps) VisualizeJump(n);
+    if (!FLAGS_nogui && kVisualizeJumps) VisualizeJump(n);
   }
   {
     // -x jump search.
@@ -79,7 +82,7 @@ int AStarPlanner::GetJPSNeighbors(const Map& map,
     if (AxisAlignedJump<0, -1>(map, goal, x_rev_steps, &n)) {
       AddNeighbor(n);
     }
-    if (kVisualizeJumps) VisualizeJump(n);
+    if (!FLAGS_nogui && kVisualizeJumps) VisualizeJump(n);
   }
   {
     // +y jump search.
@@ -87,7 +90,7 @@ int AStarPlanner::GetJPSNeighbors(const Map& map,
     if (AxisAlignedJump<1, 1>(map, goal, y_fwd_steps, &n)) {
       AddNeighbor(n);
     }
-    if (kVisualizeJumps) VisualizeJump(n);
+    if (!FLAGS_nogui && kVisualizeJumps) VisualizeJump(n);
   }
   {
     // -y jump search.
@@ -95,7 +98,7 @@ int AStarPlanner::GetJPSNeighbors(const Map& map,
     if (AxisAlignedJump<1, -1>(map, goal, y_rev_steps, &n)) {
       AddNeighbor(n);
     }
-    if (kVisualizeJumps) VisualizeJump(n);
+    if (!FLAGS_nogui && kVisualizeJumps) VisualizeJump(n);
   }
   {
     // diagonal 0 search.
@@ -103,7 +106,7 @@ int AStarPlanner::GetJPSNeighbors(const Map& map,
     if (DiagonalJump<0>(map, goal, x_fwd_steps, y_rev_steps, &n)) {
       AddNeighbor(n);
     }
-    if (kVisualizeJumps) VisualizeJump(n);
+    if (!FLAGS_nogui && kVisualizeJumps) VisualizeJump(n);
   }
   {
     // diagonal 1 search.
@@ -111,7 +114,7 @@ int AStarPlanner::GetJPSNeighbors(const Map& map,
     if (DiagonalJump<1>(map, goal, x_rev_steps, y_rev_steps, &n)) {
       AddNeighbor(n);
     }
-    if (kVisualizeJumps) VisualizeJump(n);
+    if (!FLAGS_nogui && kVisualizeJumps) VisualizeJump(n);
   }
   {
     // diagonal 2 search.
@@ -119,7 +122,7 @@ int AStarPlanner::GetJPSNeighbors(const Map& map,
     if (DiagonalJump<2>(map, goal, x_rev_steps, y_fwd_steps, &n)) {
       AddNeighbor(n);
     }
-    if (kVisualizeJumps) VisualizeJump(n);
+    if (!FLAGS_nogui && kVisualizeJumps) VisualizeJump(n);
   }
   {
     // diagonal 3 search.
@@ -127,7 +130,7 @@ int AStarPlanner::GetJPSNeighbors(const Map& map,
     if (DiagonalJump<3>(map, goal, x_fwd_steps, y_fwd_steps, &n)) {
       AddNeighbor(n);
     }
-    if (kVisualizeJumps) VisualizeJump(n);
+    if (!FLAGS_nogui && kVisualizeJumps) VisualizeJump(n);
   }
   return num_neighbors;
 }
@@ -162,6 +165,9 @@ int AStarPlanner::GetNeighbors(const Map& map,
                                const Node& v,
                                const Node& goal,
                                Node neighbors[kMaxNeighbors]) {
+  if (FLAGS_nojps) {
+    return GetImmediateNeighbors(map, v, goal, neighbors);
+  }
   return GetJPSNeighbors(map, v, goal, neighbors);
 }
 
@@ -183,7 +189,9 @@ float Dist(const Node& v1, const Node& v2) {
 }
 
 // Returns the path to goal, in reverse order.
-void GetPath(const NodeMap& parent_map, const Node& goal, Path* path_ptr) {
+void AStarPlanner::GetPath(const NodeMap& parent_map, 
+                           const Node& goal, 
+                           Path* path_ptr) {
   Path& path = *path_ptr;
   path.clear();
   Node v = goal;
@@ -194,7 +202,7 @@ void GetPath(const NodeMap& parent_map, const Node& goal, Path* path_ptr) {
   }
 }
 
-void InitVisualization(const Map& map) {
+void AStarPlanner::InitVisualization(const Map& map) {
   viz_image_ = cimg_library::CImg<uint8_t>(
       map.width(), map.height(), 1, 3, 0);
   // Draw map
@@ -207,6 +215,7 @@ void InitVisualization(const Map& map) {
       }
     }
   }
+  acc_viz_image_ = viz_image_;
 }
 
 void AStarPlanner::Visualize(const Map& map,
@@ -216,27 +225,33 @@ void AStarPlanner::Visualize(const Map& map,
                              const Node neighbors[kMaxNeighbors],
                              const int num_neighbors,
                              const NodeMap& parent_map) {
+  static double t_last_visualized = 0;
+  static const double kMinVizInterval = 0.02;
+  if (t_last_visualized > GetMonotonicTime() - kMinVizInterval) return;
+  
   if (display_ == nullptr) {
     display_ = new cimg_library::CImgDisplay(viz_image_);
   }
-  /*
+  
   for (const auto& p : parent_map) {
     const auto& n = p.first;
-    viz_image_(n.x(), n.y(), 0, 0) = 0;
-    viz_image_(n.x(), n.y(), 0, 1) = 0;
-    viz_image_(n.x(), n.y(), 0, 2) = 128;
+    acc_viz_image_.draw_point(n.x(), n.y(), kBlue);
   }
-  */
-  viz_image_.draw_circle(current.x(), current.y(), 2, kDarkBlue);
+  acc_viz_image_.draw_point(current.x(), current.y(), kYellow);
+  
+  viz_image_ = acc_viz_image_;
+  
+  viz_image_.draw_circle(current.x(), current.y(), 2, kYellow);
   viz_image_.draw_circle(start.x(), start.y(), 2, kRed);
   viz_image_.draw_circle(goal.x(), goal.y(), 2, kGreen);
 
   display_->display(viz_image_);
-  if (display_->is_key()) exit(0);
+  // if (display_->is_key()) exit(0);
+  t_last_visualized = GetMonotonicTime();
 }
 
-void DrawPath(const Path& path) {
-  for (int i = 0; i + 1 < path.size(); ++i) {
+void AStarPlanner::DrawPath(const Path& path) {
+  for (size_t i = 0; i + 1 < path.size(); ++i) {
     viz_image_.draw_line(
         path[i].x(),
         path[i].y(),
@@ -264,7 +279,7 @@ bool AStarPlanner::Plan(const Map& map,
   if (map.Occupied(start) || map.Occupied(goal)) {
     return false;
   }
-  if (true) InitVisualization(map);
+  if (!FLAGS_nogui) InitVisualization(map);
   // Initialize parent map.
   parent_map_.clear();
   // Clear all G values.
@@ -279,6 +294,27 @@ bool AStarPlanner::Plan(const Map& map,
   // Allocate a neighbor list, for speed.
   Node neighbors[kMaxNeighbors];
 
+  // Adding a node to the priority queue, with g-value and h-value:
+  // queue.Push(node, AStarPriority(g, h));
+  
+  // Checking if the queue is empty:
+  // if (queue.Empty()) { ... }
+  
+  // Get the current node with the highest priority (smallest f = g + h).
+  // Node current_node = queue.Pop();
+  
+  // Insert a node into the closed set:
+  // closed_set_.insert(node);
+  
+  // Check if a node exists in the closed set:
+  // if (closed_set_.find(node) == closed_set_.end()) {
+  //   // node was not found in the closed set.
+  // } else {
+  //   // node was found in the closed set.
+  // }
+  
+  const double t_start = GetMonotonicTime();
+  
   // While priority queue is non-empty:
   while (!queue.Empty()) {
     // Get the node with the highest priority.
@@ -294,7 +330,7 @@ bool AStarPlanner::Plan(const Map& map,
     const int num_neighbors =
         GetNeighbors(map, current, goal, neighbors);
     // Visualization for debugging.
-    if (true) {
+    if (!FLAGS_nogui) {
       Visualize(
           map, start, goal, current, neighbors, num_neighbors, parent_map_);
     }
@@ -332,9 +368,11 @@ bool AStarPlanner::Plan(const Map& map,
     }
     // If goal has a parent:
     if (parent_map_.find(goal) != parent_map_.end()) {
+      const double t_end = GetMonotonicTime();
+      printf("Path found in %f seconds.\n", t_end - t_start);
       // We're done. Extract path, and return.
       GetPath(parent_map_, goal, path);
-      if (true) {
+      if (!FLAGS_nogui) {
         DrawPath(*path);
         display_->display(viz_image_);
         while (!display_->is_closed() && !display_->is_key()) display_->wait();
@@ -342,8 +380,9 @@ bool AStarPlanner::Plan(const Map& map,
       return true;
     }
   }
-  if (kDebug) printf("No path found!\n");
-  if (true) {
+  const double t_end = GetMonotonicTime();
+  printf("No path found, took %f seconds.\n", t_end - t_start);
+  if (!FLAGS_nogui) {
     display_->display(viz_image_);
     while (!display_->is_closed() && !display_->is_key()) display_->wait();
   }
