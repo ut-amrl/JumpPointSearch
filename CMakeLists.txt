@@ -28,7 +28,6 @@ SET(libs glog X11 pthread amrl-shared-lib)
 ADD_EXECUTABLE(jps
                src/jps.cc
                src/imagemap.cc
-               src/jps_main.cc
-               src/obstaclemap.cc)
+               src/jps_main.cc)
 TARGET_LINK_LIBRARIES(jps ${libs})
 

@@ -27,7 +27,6 @@
 #include "eigen3/Eigen/Dense"
 #include "jps.h"
 #include "simple_queue.h"
-#include "redundant_queue.h"
 #include "util/timer.h"
 
 using Eigen::Vector2i;
@@ -39,7 +38,7 @@ using std::vector;
 namespace {
 static const uint8_t kRed[] = {255, 0, 0};
 static const uint8_t kGreen[] = {0, 255, 0};
-static const uint8_t kYellow[] = {255, 255, 0};
+static const uint8_t kDarkBlue[] = {0, 0, 220};
 static const uint8_t kGrey[] = {128, 128, 128};
 
 cimg_library::CImgDisplay* display_ = nullptr;
@@ -52,7 +51,7 @@ int AStarPlanner::GetJPSNeighbors(const Map& map,
                     const Node& v,
                     const Node& goal,
                     Node neighbors[kMaxNeighbors]) {
-  const bool kVisualizeJumps = kVisualize;
+  static const bool kVisualizeJumps = true;
   int num_neighbors = 0;
   const int x_fwd_steps = map.width() - v.x() - 3;
   const int x_rev_steps = v.x() - 2;
@@ -162,12 +161,8 @@ int AStarPlanner::GetImmediateNeighbors(const Map& map,
 int AStarPlanner::GetNeighbors(const Map& map,
                                const Node& v,
                                const Node& goal,
-                               bool use_jps,
                                Node neighbors[kMaxNeighbors]) {
-  if (use_jps) {
-    return GetJPSNeighbors(map, v, goal, neighbors);
-  }
-  return GetImmediateNeighbors(map, v, goal, neighbors);
+  return GetJPSNeighbors(map, v, goal, neighbors);
 }
 
 
@@ -180,18 +175,6 @@ float Heuristic(const Node& v, const Node& goal) {
 
 
 float Heuristic(const Node& v, const Node& prev, const Node& goal) {
-  /*
-  const float kEpsilon = 1e-5;
-  const Node d1 = v - prev;
-  const Node d2 = goal - v;
-  const float dx1 = d1.norm();
-  const float dx2 = d2.norm();
-  float direction_preference =
-      -std::max<float>(0.0, (d1.dot(d2) / (dx1 * dx2)));
-  if (dx1 > kEpsilon && dx2 > kEpsilon) {
-    return (Heuristic(v, goal) + direction_preference);
-  }
-  */
   return Heuristic(v, goal);
 }
 
@@ -236,15 +219,15 @@ void AStarPlanner::Visualize(const Map& map,
   if (display_ == nullptr) {
     display_ = new cimg_library::CImgDisplay(viz_image_);
   }
-  if (skip_interval_++ < 100) return;
-  skip_interval_ = 0;
+  /*
   for (const auto& p : parent_map) {
     const auto& n = p.first;
     viz_image_(n.x(), n.y(), 0, 0) = 0;
     viz_image_(n.x(), n.y(), 0, 1) = 0;
     viz_image_(n.x(), n.y(), 0, 2) = 128;
   }
-  viz_image_.draw_circle(current.x(), current.y(), 2, kYellow);
+  */
+  viz_image_.draw_circle(current.x(), current.y(), 2, kDarkBlue);
   viz_image_.draw_circle(start.x(), start.y(), 2, kRed);
   viz_image_.draw_circle(goal.x(), goal.y(), 2, kGreen);
 
@@ -276,20 +259,18 @@ void DrawPath(const Path& path) {
 bool AStarPlanner::Plan(const Map& map,
                         const Node& start,
                         const Node& goal,
-                        bool use_jps,
                         Path* path) {
   static const bool kDebug = false;
   if (map.Occupied(start) || map.Occupied(goal)) {
     return false;
   }
-  if (kVisualize) InitVisualization(map);
+  if (true) InitVisualization(map);
   // Initialize parent map.
   parent_map_.clear();
   // Clear all G values.
   g_values_.clear();
   // Initialize an empty priority queue.
-  // SimpleQueue<Node, AStarPriority> queue;
-  RedundantQueue<Node, AStarPriority, NodeHash> queue(hash_);
+  SimpleQueue<Node, AStarPriority> queue;
   // Add start to priority queue.
   queue.Push(start, AStarPriority(0, Heuristic(start, goal)));
   g_values_[start] = 0;
@@ -303,12 +284,17 @@ bool AStarPlanner::Plan(const Map& map,
     // Get the node with the highest priority.
     const auto current = queue.Pop();
     closed_set_.insert(current);
-    if (kDebug) printf("\nCurrent = %d,%d (%f)\n", current.x(), current.y(), g_values_[current]);
+    if (kDebug) {
+      printf("\nCurrent = %d,%d (%f)\n",
+             current.x(),
+             current.y(),
+             g_values_[current]);
+    }
     // Get all neighbors.
     const int num_neighbors =
-        GetNeighbors(map, current, goal, use_jps, neighbors);
+        GetNeighbors(map, current, goal, neighbors);
     // Visualization for debugging.
-    if (kVisualize) {
+    if (true) {
       Visualize(
           map, start, goal, current, neighbors, num_neighbors, parent_map_);
     }
@@ -348,7 +334,7 @@ bool AStarPlanner::Plan(const Map& map,
     if (parent_map_.find(goal) != parent_map_.end()) {
       // We're done. Extract path, and return.
       GetPath(parent_map_, goal, path);
-      if (kVisualize) {
+      if (true) {
         DrawPath(*path);
         display_->display(viz_image_);
         while (!display_->is_closed() && !display_->is_key()) display_->wait();
@@ -357,7 +343,7 @@ bool AStarPlanner::Plan(const Map& map,
     }
   }
   if (kDebug) printf("No path found!\n");
-  if (kVisualize) {
+  if (true) {
     display_->display(viz_image_);
     while (!display_->is_closed() && !display_->is_key()) display_->wait();
   }

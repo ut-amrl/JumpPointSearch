@@ -25,7 +25,6 @@
 #include "eigen3/Eigen/Dense"
 #include "CImg.h"
 #include "imagemap.h"
-#include "obstaclemap.h"
 #ifndef JPS_H
 #define JPS_H
 
@@ -92,15 +91,13 @@ struct AStarPriority {
 class AStarPlanner {
   static constexpr int kMaxNeighbors = 8;
  public:
-  AStarPlanner(int max_map_width, bool visualize) :
+  explicit AStarPlanner(int max_map_width) :
       kStride(max_map_width),
-      kVisualize(visualize),
       kMinLookupSize(max_map_width),
       hash_(kStride),
       parent_map_(kMinLookupSize, hash_),
       g_values_(kMinLookupSize, hash_),
-      closed_set_(kMinLookupSize, hash_),
-      skip_interval_(0) {}
+      closed_set_(kMinLookupSize, hash_) {}
 
   int GetJPSNeighbors(const Map& map,
                       const Node& v,
@@ -115,7 +112,6 @@ class AStarPlanner {
   int GetNeighbors(const Map& map,
                  const Node& v,
                  const Node& goal,
-                 bool use_jps,
                  Node neighbors[kMaxNeighbors]);
 
   void Visualize(const Map& map,
@@ -143,13 +139,10 @@ class AStarPlanner {
   bool Plan(const Map& map,
             const Node& start,
             const Node& goal,
-            bool use_jps,
             Path* path);
 
   // Stride length of the map, used for hashing.
   const int kStride;
-  // Whether to display visualization or not.
-  const bool kVisualize;
   // Minimum number of entries to allocate memory for, in unordered maps.
   const size_t kMinLookupSize;
   // Node hashing functor.
@@ -160,8 +153,6 @@ class AStarPlanner {
   std::unordered_map<Node, float, NodeHash> g_values_;
   // Closed set (nodes with optimal costs).
   std::unordered_set<Node, NodeHash> closed_set_;
-  // Frame skip counter for visualizing every N frames.
-  int skip_interval_;
 };
 
 // Returns true if the position (n.x() + dir[0], n.y() + dir[1]) is unoccupied.

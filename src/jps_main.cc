@@ -31,38 +31,32 @@ using astarplanner::Node;
 using astarplanner::Path;
 using astarplanner::AStarPlanner;
 
-
-bool kVisualize = false;
-bool use_jps_ = true;
-
 void Plan(const Map& map, const Node& start, const Node& goal) {
-  FunctionTimer timer("A*");
-  AStarPlanner planner(map.width(), kVisualize);
+  AStarPlanner planner(map.width());
   Path path;
-  planner.Plan(map, start, goal, use_jps_, &path);
+  planner.Plan(map, start, goal, &path);
 }
 
 int main(int num_args, char* args[]) {
-  if (num_args > 1) {
-    printf("Planning on map image '%s'\n", args[1]);
-    kVisualize = true;
-    Map map(args[1]);
-    Node start(15, 15);
-    Node goal(map.width() - 10, map.height() / 2);
-    if (num_args > 3) {
-      goal.x() = atoi(args[2]);
-      goal.y() = atoi(args[3]);
-    }
-    if (num_args > 5) {
-      start.x() = atoi(args[4]);
-      start.y() = atoi(args[5]);
-    }
-    printf("Start: %d,%d Goal: %d,%d\n",
-           start.x(), start.y(),
-           goal.x(), goal.y());
-    Plan(map, start, goal);
-  } else  {
-
+  if (num_args < 2) {
+    printf("Usage: ./bin/jps map.png [goal_x goal y [start x start y]]\n");
+    return 1;
   }
+  printf("Planning on map image '%s'\n", args[1]);
+  Map map(args[1]);
+  Node start(15, 15);
+  Node goal(map.width() - 10, map.height() / 2);
+  if (num_args > 3) {
+    goal.x() = atoi(args[2]);
+    goal.y() = atoi(args[3]);
+  }
+  if (num_args > 5) {
+    start.x() = atoi(args[4]);
+    start.y() = atoi(args[5]);
+  }
+  printf("Start: %d,%d Goal: %d,%d\n",
+          start.x(), start.y(),
+          goal.x(), goal.y());
+  Plan(map, start, goal);
   return 0;
 }
