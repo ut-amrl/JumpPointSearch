@@ -223,16 +223,14 @@ void AStarPlanner::Visualize(const Map& map,
                              const Node& start,
                              const Node& goal,
                              const Node& current,
-                             const Node neighbors[kMaxNeighbors],
-                             const int num_neighbors,
                              const NodeMap& parent_map) {
   static double t_last_visualized = 0;
   static const double kMinVizInterval = 0.02;
   if (t_last_visualized > GetMonotonicTime() - kMinVizInterval) return;
 
   for (const auto& p : parent_map) {
-    const auto& n = p.first;
-    acc_viz_image_.draw_point(n.x(), n.y(), kBlue);
+    acc_viz_image_.draw_line(
+      p.first.x(), p.first.y(), p.second.x(), p.second.y(), kBlue);
   }
   acc_viz_image_.draw_point(current.x(), current.y(), kYellow);
 
@@ -302,6 +300,9 @@ bool AStarPlanner::Plan(const Map& map,
   // Allocate a neighbor list, for speed.
   Node neighbors[kMaxNeighbors];
 
+  // ==============================================================
+  // Priority queue.
+  // ==============================================================
   // Adding a node to the priority queue, with g-value and h-value:
   // queue.Push(node, AStarPriority(g, h));
 
@@ -311,6 +312,9 @@ bool AStarPlanner::Plan(const Map& map,
   // Get the current node with the highest priority (smallest f = g + h).
   // Node current_node = queue.Pop();
 
+  // ==============================================================
+  // Sets.
+  // ==============================================================
   // Insert a node into the closed set:
   // closed_set_.insert(node);
 
@@ -321,7 +325,32 @@ bool AStarPlanner::Plan(const Map& map,
   //   // node was found in the closed set.
   // }
 
+  // ==============================================================
+  // Parent map and g values are stored using a hash table.
+  // ==============================================================
+  // If a node does not exist in the hash table, setting its parent or
+  // g-value will initialize a new entry in the hash table:
+  // g_values_[node] = g;
+  // parent_map_[node] = parent_node;
+
+  // If a node already exists in the hash table, you can update its value by
+  // setting it to a new value, which looks identical to its creation:
+  // g_values_[node] = g;
+  // parent_map_[node] = parent_node;
+
+  // Checking if a node exists in the hash table or not:
+  // if (g_values_.find(node) == g_values_.end()) {
+  //   // Does not exist.
+  // } else {
+  //   // Exists.
+  // }
+
+  // Visualize the current state of the plan search.
+  // The neighbors array will be filled with
+  // Visualize(map, start, goal, current_node, parent_map_);
+
   const double t_start = GetMonotonicTime();
+
 
   // While priority queue is non-empty:
   while (!queue.Empty()) {
@@ -339,8 +368,7 @@ bool AStarPlanner::Plan(const Map& map,
         GetNeighbors(map, current, goal, neighbors);
     // Visualization for debugging.
     if (!FLAGS_nogui) {
-      Visualize(
-          map, start, goal, current, neighbors, num_neighbors, parent_map_);
+      Visualize(map, start, goal, current, parent_map_);
     }
     // For all neighbors:
     for (int i = 0; i < num_neighbors; ++i) {

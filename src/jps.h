@@ -114,16 +114,14 @@ class AStarPlanner {
                  const Node& goal,
                  Node neighbors[kMaxNeighbors]);
 
-  void GetPath(const NodeMap& parent_map, 
-               const Node& goal, 
+  void GetPath(const NodeMap& parent_map,
+               const Node& goal,
                Path* path_ptr);
-  
+
   void Visualize(const Map& map,
                  const Node& start,
                  const Node& goal,
                  const Node& current,
-                 const Node neighbors[kMaxNeighbors],
-                 const int num_neighbors,
                  const NodeMap& parent_map);
 
   template<const int kAxis, const int kDir>
@@ -146,9 +144,9 @@ class AStarPlanner {
             Path* path);
 
   void DrawPath(const Path& path);
-  
+
   void InitVisualization(const Map& map);
-  
+
   // Stride length of the map, used for hashing.
   const int kStride;
   // Minimum number of entries to allocate memory for, in unordered maps.
