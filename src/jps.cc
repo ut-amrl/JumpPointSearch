@@ -345,9 +345,12 @@ bool AStarPlanner::Plan(const Map& map,
   //   // Exists.
   // }
 
-  // Visualize the current state of the plan search.
-  // The neighbors array will be filled with
-  // Visualize(map, start, goal, current_node, parent_map_);
+  // ==============================================================
+  // Visualization
+  // ==============================================================
+  // Visualize the current state of the plan search. Useful to call for every
+  // iteration, to visualize the progress of the search.
+  // Visualize(map, start, goal, current, parent_map_);
 
   const double t_start = GetMonotonicTime();
 
