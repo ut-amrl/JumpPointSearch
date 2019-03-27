@@ -189,8 +189,8 @@ float Dist(const Node& v1, const Node& v2) {
 }
 
 // Returns the path to goal, in reverse order.
-void AStarPlanner::GetPath(const NodeMap& parent_map, 
-                           const Node& goal, 
+void AStarPlanner::GetPath(const NodeMap& parent_map,
+                           const Node& goal,
                            Path* path_ptr) {
   Path& path = *path_ptr;
   path.clear();
@@ -203,6 +203,7 @@ void AStarPlanner::GetPath(const NodeMap& parent_map,
 }
 
 void AStarPlanner::InitVisualization(const Map& map) {
+  display_ = new cimg_library::CImgDisplay(viz_image_, "A* with JPS");
   viz_image_ = cimg_library::CImg<uint8_t>(
       map.width(), map.height(), 1, 3, 0);
   // Draw map
@@ -228,19 +229,15 @@ void AStarPlanner::Visualize(const Map& map,
   static double t_last_visualized = 0;
   static const double kMinVizInterval = 0.02;
   if (t_last_visualized > GetMonotonicTime() - kMinVizInterval) return;
-  
-  if (display_ == nullptr) {
-    display_ = new cimg_library::CImgDisplay(viz_image_);
-  }
-  
+
   for (const auto& p : parent_map) {
     const auto& n = p.first;
     acc_viz_image_.draw_point(n.x(), n.y(), kBlue);
   }
   acc_viz_image_.draw_point(current.x(), current.y(), kYellow);
-  
+
   viz_image_ = acc_viz_image_;
-  
+
   viz_image_.draw_circle(current.x(), current.y(), 2, kYellow);
   viz_image_.draw_circle(start.x(), start.y(), 2, kRed);
   viz_image_.draw_circle(goal.x(), goal.y(), 2, kGreen);
@@ -276,7 +273,18 @@ bool AStarPlanner::Plan(const Map& map,
                         const Node& goal,
                         Path* path) {
   static const bool kDebug = false;
+  if (!map.ValidNode(start)) {
+    printf("Invalid start location.\n");
+    return false;
+  }
+  if (!map.ValidNode(goal)) {
+    printf("Invalid goal location.\n");
+    return false;
+  }
   if (map.Occupied(start) || map.Occupied(goal)) {
+    printf("No path possible. Start unreachable:%d goal unreachable:%d\n",
+           1 - static_cast<int>(map.Occupied(start)),
+           1 - static_cast<int>(map.Occupied(goal)));
     return false;
   }
   if (!FLAGS_nogui) InitVisualization(map);
@@ -296,25 +304,25 @@ bool AStarPlanner::Plan(const Map& map,
 
   // Adding a node to the priority queue, with g-value and h-value:
   // queue.Push(node, AStarPriority(g, h));
-  
+
   // Checking if the queue is empty:
   // if (queue.Empty()) { ... }
-  
+
   // Get the current node with the highest priority (smallest f = g + h).
   // Node current_node = queue.Pop();
-  
+
   // Insert a node into the closed set:
   // closed_set_.insert(node);
-  
+
   // Check if a node exists in the closed set:
   // if (closed_set_.find(node) == closed_set_.end()) {
   //   // node was not found in the closed set.
   // } else {
   //   // node was found in the closed set.
   // }
-  
+
   const double t_start = GetMonotonicTime();
-  
+
   // While priority queue is non-empty:
   while (!queue.Empty()) {
     // Get the node with the highest priority.
