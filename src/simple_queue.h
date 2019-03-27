@@ -66,8 +66,11 @@ class SimpleQueue {
 
   // Retreive the value with the highest priority.
   Value Pop() {
+    if (values_.empty()) {
+      fprintf(stderr, "ERROR: Pop() called on an empty queue!\n");
+      exit(1);
+    }
     Sort();
-    // TODO(joydeepb): error handling if empty.
     const Value v = values_.back().first;
     values_.resize(values_.size() - 1);
     return v;
