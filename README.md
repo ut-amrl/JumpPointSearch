@@ -1,5 +1,5 @@
 # JumpPointSearch
-Jump-Point Search
+A* Jump-Point Search
 
 ## Build
 
