@@ -57,8 +57,8 @@ class SimpleQueue {
 
   // Sorts the priorities.
   void Sort() {
-    auto comparator = [](const pair<Value, Priority>& v1,
-                         const pair<Value, Priority>& v2){
+    static const auto comparator = 
+        [](const pair<Value, Priority>& v1, const pair<Value, Priority>& v2) {
       return (v1.second < v2.second);
     };
     sort(values_.begin(), values_.end(), comparator);
